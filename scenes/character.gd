@@ -8,6 +8,7 @@ const JUMP_VELOCITY = 4.5
 @onready var col: CollisionShape3D = $CollisionShape3D
 @onready var anim: AnimationPlayer = $"X Bot/AnimationPlayer"
 @onready var skeleton_3d: Skeleton3D = $"X Bot/Skeleton3D"
+@onready var hips: PhysicalBone3D = $"X Bot/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone mixamorig_Hips"
 
 
 func _ready() -> void:
@@ -15,20 +16,22 @@ func _ready() -> void:
 
 func _unhandled_input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("ui_cancel"):
-		if not ragdoll.active:
-			ragdoll.active = true
-			col.disabled = true
-			anim.active = false
-			skeleton_3d.top_level = true
-			ragdoll.physical_bones_start_simulation()
-		else:
-			global_position = skeleton_3d.global_position
-			skeleton_3d.top_level = false
-			skeleton_3d.position = Vector3.ZERO
-			ragdoll.active = false
-			col.disabled = false
-			anim.active = true
-			ragdoll.physical_bones_stop_simulation()
+		set_ragdoll(not ragdoll.active, Vector3.LEFT * 50)
+
+func set_ragdoll(enabled : bool, impulse : Vector3 = Vector3.ZERO):
+	if enabled == ragdoll.active:
+		return
+	global_position = skeleton_3d.global_position
+	skeleton_3d.top_level = enabled
+	skeleton_3d.position = Vector3.ZERO
+	ragdoll.active = enabled
+	col.disabled = enabled
+	anim.active = not enabled
+	if enabled:
+		ragdoll.physical_bones_start_simulation()
+		hips.apply_central_impulse(impulse)
+	else:
+		ragdoll.physical_bones_stop_simulation()
 
 func _physics_process(delta: float) -> void:
 	# Add the gravity.
